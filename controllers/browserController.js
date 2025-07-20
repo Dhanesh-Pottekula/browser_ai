@@ -1,30 +1,22 @@
-const { chromium } = require("playwright");
+import BrowserManager from '../playwright/browserManager.js';
+import PageActions from '../playwright/pageActions.js';
 
-async function delay(ms) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-async function launchBrowserWithConfig({ browserPath, userDataDir, apiKey, useLocalModel }) {
-
-  const browser = await chromium.launchPersistentContext(
+const browserManager = new BrowserManager();
+const pageActions = new PageActions();
+export async function launchBrowserWithConfig({ browserPath, userDataDir, apiKey, useLocalModel }) {
+  const browser = await browserManager.launchPersistentContext({
     userDataDir,
-    {
-      headless: false,
-      channel: 'chrome', // Uses full Chrome, not bundled Chromium
-    }
-  );
-  
-  let page = browser.pages().at(0);
-  if (!page) page = await browser.newPage();
-  
-  await page.goto("https://www.google.com");
+    browserPath
+  });
 
-  // Example: type slowly
-  await page.click("input[name='q']");
-  for (const char of "Hello from AI") {
-    await page.keyboard.type(char);
-    await delay(200); // 200ms between keystrokes
-  }
+  const page = await browserManager.getPage(browser);
+  await pageActions.goto(page, "https://www.google.com");
+  await pageActions.click(page, "input[name='q']");
+  await pageActions.type(page, "Hello from AI");
+  await pageActions.press(page, "Enter");
+  await pageActions.waitForTimeout(page, 1000);
+  await pageActions.screenshot(page, "screenshot.png");
+
 }
 
-module.exports = { launchBrowserWithConfig };
+

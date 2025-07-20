@@ -1,6 +1,10 @@
-const express = require("express");
-const path = require("path");
-const { launchBrowserWithConfig } = require("../controllers/browserController");
+import path from "path";
+import { fileURLToPath } from "url";
+import express from "express";
+import { launchBrowserWithConfig } from "../controllers/browserController.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const app = express();
 app.use(express.json());
