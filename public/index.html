@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>AI Browser Control</title>
+</head>
+<body>
+  <h2>Browser Configuration</h2>
+  <form id="configForm">
+    <!-- <input type="text" name="browserPath" placeholder="Browser Executable Path" required><br> -->
+    <input type="text" name="userDataDir" placeholder="User Data Dir"><br>
+    <input type="text" name="port" placeholder="Port (default 5000)"><br>
+    <input type="text" name="apiKey" placeholder="Model API Key"><br>
+    <label>
+      <input type="checkbox" name="useLocalModel" checked>
+      Use Local Model
+    </label><br>
+    <button type="submit">Launch</button>
+  </form>
+
+  <script>
+    document.getElementById("configForm").onsubmit = async (e) => {
+      e.preventDefault();
+      const data = Object.fromEntries(new FormData(e.target));
+      await fetch("/launch", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      }).then(res => res.json()).catch(err => {
+        alert(err.message);
+      });
+    };
+  </script>
+</body>
+</html>
