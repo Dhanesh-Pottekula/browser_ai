@@ -150,6 +150,12 @@ class PageActions {
   static async waitForNetworkIdle(page, timeout = 5000) {
     await DelayUtils.waitForNetworkIdle(page, timeout);
   }
-}
+
+  static async press(page, selector, key) {
+    await DelayUtils.delay(1000);
+    await page.press(selector, key);
+  }
+
+  }
 
 export default PageActions;

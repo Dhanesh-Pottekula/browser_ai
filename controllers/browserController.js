@@ -1,21 +1,25 @@
 import BrowserManager from '../playwright/browserManager.js';
 import PageActions from '../playwright/pageActions.js';
+import envDefaults from '../envDefaults.js';
 
 const browserManager = new BrowserManager();
-const pageActions = new PageActions();
-export async function launchBrowserWithConfig({ browserPath, userDataDir, apiKey, useLocalModel }) {
+export async function launchBrowserWithConfig({ url }) {
+
+  
   const browser = await browserManager.launchPersistentContext({
-    userDataDir,
-    browserPath
+    userDataDir: envDefaults.userDataDir,
+    browserPath: envDefaults.browserPath,
+    headless: envDefaults.headless,
+    channel: envDefaults.channel
   });
 
   const page = await browserManager.getPage(browser);
-  await pageActions.goto(page, "https://www.google.com");
-  await pageActions.click(page, "input[name='q']");
-  await pageActions.type(page, "Hello from AI");
-  await pageActions.press(page, "Enter");
-  await pageActions.waitForTimeout(page, 1000);
-  await pageActions.screenshot(page, "screenshot.png");
+  await PageActions.navigateTo(page, url);
+  await PageActions.click(page, "input[name='q']");
+  await PageActions.type(page, "input[name='q']", "Hello from AI");
+  await PageActions.press(page, "input[name='q']", "Enter");
+  await PageActions.takeScreenshot(page, "screenshot.png");
+  await browserManager.closeContext();
 
 }
 

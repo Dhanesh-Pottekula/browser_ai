@@ -7,13 +7,13 @@
 <body>
   <h2>Browser Configuration</h2>
   <form id="configForm">
-    <!-- <input type="text" name="browserPath" placeholder="Browser Executable Path" required><br> -->
-    <input type="text" name="userDataDir" placeholder="User Data Dir"><br>
-    <input type="text" name="port" placeholder="Port (default 5000)"><br>
-    <input type="text" name="apiKey" placeholder="Model API Key"><br>
+    <input type="text" name="url" placeholder="Target URL" required><br>
+    <!-- <input type="text" name="userDataDir" placeholder="User Data Dir"><br> -->
+    <!-- <input type="text" name="port" placeholder="Port (default 5000)"><br> -->
+    <!-- <input type="text" name="apiKey" placeholder="Model API Key"><br> -->
     <label>
-      <input type="checkbox" name="useLocalModel" checked>
-      Use Local Model
+      <input type="checkbox" name="headless" checked>
+      Headless Mode
     </label><br>
     <button type="submit">Launch</button>
   </form>
