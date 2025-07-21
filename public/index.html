@@ -3,33 +3,130 @@
 <head>
   <meta charset="UTF-8">
   <title>AI Browser Control</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 600px;
+      margin: 50px auto;
+      padding: 20px;
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 8px;
+      margin: 5px 0;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+    }
+    button {
+      padding: 10px 20px;
+      margin: 5px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .launch-btn {
+      background-color: #4CAF50;
+      color: white;
+    }
+    .ping-btn {
+      background-color: #2196F3;
+      color: white;
+    }
+    .ping-btn:hover {
+      background-color: #1976D2;
+    }
+    .launch-btn:hover {
+      background-color: #45a049;
+    }
+    .response {
+      margin-top: 20px;
+      padding: 10px;
+      border-radius: 4px;
+      display: none;
+    }
+    .success {
+      background-color: #d4edda;
+      border: 1px solid #c3e6cb;
+      color: #155724;
+    }
+    .error {
+      background-color: #f8d7da;
+      border: 1px solid #f5c6cb;
+      color: #721c24;
+    }
+  </style>
 </head>
 <body>
   <h2>Browser Configuration</h2>
   <form id="configForm">
-    <input type="text" name="url" placeholder="Target URL" required><br>
+    <div class="form-group">
+      <input type="text" name="url" placeholder="Target URL" required>
+    </div>
     <!-- <input type="text" name="userDataDir" placeholder="User Data Dir"><br> -->
     <!-- <input type="text" name="port" placeholder="Port (default 5000)"><br> -->
     <!-- <input type="text" name="apiKey" placeholder="Model API Key"><br> -->
-    <label>
-      <input type="checkbox" name="headless" checked>
-      Headless Mode
-    </label><br>
-    <button type="submit">Launch</button>
+    <div class="form-group">
+      <label>
+        <input type="checkbox" name="headless" checked>
+        Headless Mode
+      </label>
+    </div>
+    <div class="form-group">
+      <button type="submit" class="launch-btn">Launch</button>
+      <button type="button" id="pingBtn" class="ping-btn">Ping Agent</button>
+    </div>
   </form>
+
+  <div id="response" class="response"></div>
 
   <script>
     document.getElementById("configForm").onsubmit = async (e) => {
       e.preventDefault();
       const data = Object.fromEntries(new FormData(e.target));
-      await fetch("/launch", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(data),
-      }).then(res => res.json()).catch(err => {
-        alert(err.message);
-      });
+      try {
+        const response = await fetch("/api/launch", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(data),
+        });
+        const result = await response.json();
+        showResponse(result.status || "Launched successfully!", "success");
+      } catch (err) {
+        showResponse(err.message, "error");
+      }
     };
+
+    document.getElementById("pingBtn").onclick = async () => {
+      try {
+        const response = await fetch("/api/ping", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+        });
+        const result = await response.json();
+        if (result.status === "success") {
+          showResponse(`Agent Response: ${result.response}`, "success");
+        } else {
+          showResponse(result.error || "Ping failed", "error");
+        }
+      } catch (err) {
+        showResponse(err.message, "error");
+      }
+    };
+
+    function showResponse(message, type) {
+      const responseDiv = document.getElementById("response");
+      responseDiv.textContent = message;
+      responseDiv.className = `response ${type}`;
+      responseDiv.style.display = "block";
+      
+      // Auto-hide after 5 seconds
+      setTimeout(() => {
+        responseDiv.style.display = "none";
+      }, 5000);
+    }
   </script>
 </body>
 </html>

@@ -1,26 +1,26 @@
-import BrowserManager from '../playwright/browserManager.js';
-import PageActions from '../playwright/pageActions.js';
-import envDefaults from '../envDefaults.js';
+import express from 'express';
+import AiAgent from '../agents/aiAgentClass.js';
+import { launchBrowserWithConfig, pingAgent } from './browserService.js';
 
-const browserManager = new BrowserManager();
-export async function launchBrowserWithConfig({ url }) {
+const router = express.Router();
+const aiAgent = new AiAgent();
 
-  
-  const browser = await browserManager.launchPersistentContext({
-    userDataDir: envDefaults.userDataDir,
-    browserPath: envDefaults.browserPath,
-    headless: envDefaults.headless,
-    channel: envDefaults.channel
-  });
+// Route handlers
+router.post("/launch", async (req, res) => {
+  try {
+    await launchBrowserWithConfig(req.body);
+    res.send({ status: "Launched" });
+  } catch (err) {
+    res.status(500).send({ error: err.message });
+  }
+});
 
-  const page = await browserManager.getPage(browser);
-  await PageActions.navigateTo(page, url);
-  await PageActions.click(page, "input[name='q']");
-  await PageActions.type(page, "input[name='q']", "Hello from AI");
-  await PageActions.press(page, "input[name='q']", "Enter");
-  await PageActions.takeScreenshot(page, "screenshot.png");
-  await browserManager.closeContext();
-
-}
-
-
+router.post("/ping", async (req, res) => {
+  try {
+    const response = await pingAgent();
+    res.send({ status: "success", response });
+  } catch (err) {
+    res.status(500).send({ error: err.message });
+  }
+});
+export default router;

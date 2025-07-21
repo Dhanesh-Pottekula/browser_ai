@@ -4,11 +4,12 @@ import dotenv from 'dotenv';
 dotenv.config();
 
 const envDefaults = {
-  agentUrl: process.env.AGENT_URL || "https://www.google.com",
+  agentUrl: process.env.AGENT_URL || "http://localhost:11434/api/generate",
   userDataDir: process.env.USER_DATA_DIR || null,
   browserPath: process.env.BROWSER_PATH || null,
   headless: process.env.HEADLESS === 'true' || false,
   channel: process.env.CHANNEL || 'chrome',
+  model: process.env.MODAL_NAME
 };
 console.log(envDefaults);
 
