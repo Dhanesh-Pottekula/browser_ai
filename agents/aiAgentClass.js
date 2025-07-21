@@ -40,21 +40,6 @@ class AiAgent {
   }
 
   /**
-   * Add to history
-   */
-  addToHistory(entry) {
-    this.history.push({
-      timestamp: new Date().toISOString(),
-      ...entry
-    });
-    
-    // Keep only last 50 entries
-    if (this.history.length > 50) {
-      this.history.shift();
-    }
-  }
-
-  /**
    * Get history
    */
   getHistory() {
@@ -73,6 +58,7 @@ class AiAgent {
    */
   reset() {
     this.status = 'idle';
+    this.planResponse = null;
     this.failureCount = 0;
     this.successCount = 0;
     this.lastError = null;
@@ -93,6 +79,9 @@ class AiAgent {
    */
   async callAgent(message) {
     if (this.status === 'busy') {
+      throw new Error('Agent is busy');
+    }
+    if(this.failureCount > 3){
       throw new Error('Agent is busy');
     }
     this.status = 'busy';
@@ -124,8 +113,13 @@ class AiAgent {
 
   async plan(userPrompt) {
     this.userPrompt = userPrompt;
-    this.planningPrompt = planningPrompt(userPrompt);
-    return this.callAgent(this.planningPrompt);
+    const plan = planningPrompt(userPrompt);
+    const planResponse = await this.callAgent(plan);
+    if(planResponse?.response_status === "failure"){
+      this.planResponse = planResponse;
+      return this.planResponse;
+    }
+    throw new Error("Plan failed");
   }
   
   async ping() {

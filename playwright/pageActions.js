@@ -1,4 +1,5 @@
-import DelayUtils from '../utils/delayUtils.js';
+import DelayUtils from "../utils/delayUtils.js";
+import * as cheerio from "cheerio";
 
 /**
  * Page Actions - Handles common page operations
@@ -12,8 +13,8 @@ class PageActions {
    */
   static async navigateTo(page, url, options = {}) {
     const defaultOptions = {
-      waitUntil: 'networkidle',
-      timeout: 30000
+      waitUntil: "networkidle",
+      timeout: 30000,
     };
 
     const navOptions = { ...defaultOptions, ...options };
@@ -52,7 +53,9 @@ class PageActions {
       await DelayUtils.waitForElement(page, selector);
       await page.fill(selector, text, options);
     } catch (error) {
-      throw new Error(`Failed to type in element ${selector}: ${error.message}`);
+      throw new Error(
+        `Failed to type in element ${selector}: ${error.message}`
+      );
     }
   }
 
@@ -67,7 +70,9 @@ class PageActions {
       await DelayUtils.waitForElement(page, selector);
       return await page.textContent(selector);
     } catch (error) {
-      throw new Error(`Failed to get text from element ${selector}: ${error.message}`);
+      throw new Error(
+        `Failed to get text from element ${selector}: ${error.message}`
+      );
     }
   }
 
@@ -83,7 +88,9 @@ class PageActions {
       await DelayUtils.waitForElement(page, selector);
       return await page.getAttribute(selector, attribute);
     } catch (error) {
-      throw new Error(`Failed to get attribute ${attribute} from element ${selector}: ${error.message}`);
+      throw new Error(
+        `Failed to get attribute ${attribute} from element ${selector}: ${error.message}`
+      );
     }
   }
 
@@ -98,16 +105,49 @@ class PageActions {
   }
 
   /**
-   * Take a screenshot
+   * Take a screenshot and return it as a buffer (without saving to disk)
    * @param {Object} page - Playwright page object
-   * @param {string} path - Screenshot path
    * @param {Object} options - Screenshot options
+   * @returns {Buffer} - Screenshot as a buffer
    */
-  static async takeScreenshot(page, path, options = {}) {
+
+  static async getCleanedHTML(page) {
     try {
-      await page.screenshot({ path, ...options });
+      const html = await page.content();
+      const $ = cheerio.load(html);
+
+      // Remove unwanted tags completely
+      $("script, style, noscript, link, meta").remove();
+
+      // Remove hidden or invisible elements
+      $(
+        '[style*="display:none"], [style*="visibility:hidden"], [style*="opacity:0"]'
+      ).remove();
+
+      // Whitelist of attributes to retain
+      const allowedAttrs = [
+        "id",
+        "class",
+        "name",
+        "type",
+        "aria-label",
+        "role",
+      ];
+
+      // Strip all attributes except allowed ones
+      $("*").each((_, el) => {
+        const attribs = el.attribs;
+        for (const attr in attribs) {
+          if (!allowedAttrs.includes(attr)) {
+            $(el).removeAttr(attr);
+          }
+        }
+      });
+
+      // Return cleaned body HTML
+      return $("body").html();
     } catch (error) {
-      throw new Error(`Failed to take screenshot: ${error.message}`);
+      throw new Error(`Failed to clean DOM: ${error.message}`);
     }
   }
 
@@ -138,7 +178,9 @@ class PageActions {
     try {
       await page.scrollIntoViewIfNeeded(selector);
     } catch (error) {
-      throw new Error(`Failed to scroll to element ${selector}: ${error.message}`);
+      throw new Error(
+        `Failed to scroll to element ${selector}: ${error.message}`
+      );
     }
   }
 
@@ -155,7 +197,6 @@ class PageActions {
     await DelayUtils.delay(1000);
     await page.press(selector, key);
   }
-
-  }
+}
 
 export default PageActions;

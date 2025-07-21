@@ -13,12 +13,16 @@
     .form-group {
       margin-bottom: 15px;
     }
-    input[type="text"] {
+    input[type="text"], textarea {
       width: 100%;
       padding: 8px;
       margin: 5px 0;
       border: 1px solid #ddd;
       border-radius: 4px;
+    }
+    textarea {
+      height: 100px;
+      resize: vertical;
     }
     button {
       padding: 10px 20px;
@@ -35,11 +39,18 @@
       background-color: #2196F3;
       color: white;
     }
+    .prompt-btn {
+      background-color: #FF9800;
+      color: white;
+    }
     .ping-btn:hover {
       background-color: #1976D2;
     }
     .launch-btn:hover {
       background-color: #45a049;
+    }
+    .prompt-btn:hover {
+      background-color: #F57C00;
     }
     .response {
       margin-top: 20px;
@@ -56,6 +67,14 @@
       background-color: #f8d7da;
       border: 1px solid #f5c6cb;
       color: #721c24;
+    }
+    .prompt-section {
+      margin-top: 20px;
+      padding: 15px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      background-color: #f9f9f9;
+      display: none;
     }
   </style>
 </head>
@@ -80,6 +99,16 @@
     </div>
   </form>
 
+  <div id="promptSection" class="prompt-section">
+    <h3>Enter Your Task</h3>
+    <div class="form-group">
+      <textarea name="prompt" id="promptInput" placeholder="Describe the task you want the AI agent to perform on the website..." required></textarea>
+    </div>
+    <div class="form-group">
+      <button type="button" id="submitPromptBtn" class="prompt-btn">Submit Task</button>
+    </div>
+  </div>
+
   <div id="response" class="response"></div>
 
   <script>
@@ -94,6 +123,9 @@
         });
         const result = await response.json();
         showResponse(result.status || "Launched successfully!", "success");
+        
+        // Show the prompt section after successful launch
+        document.getElementById("promptSection").style.display = "block";
       } catch (err) {
         showResponse(err.message, "error");
       }
@@ -110,6 +142,30 @@
           showResponse(`Agent Response: ${result.response}`, "success");
         } else {
           showResponse(result.error || "Ping failed", "error");
+        }
+      } catch (err) {
+        showResponse(err.message, "error");
+      }
+    };
+
+    document.getElementById("submitPromptBtn").onclick = async () => {
+      const prompt = document.getElementById("promptInput").value.trim();
+      if (!prompt) {
+        showResponse("Please enter a task description", "error");
+        return;
+      }
+
+      try {
+        const response = await fetch("/api/plan_and_execute", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt }),
+        });
+        const result = await response.json();
+        if (result.status === "success") {
+          showResponse(`Task submitted successfully! Response: ${result.response}`, "success");
+        } else {
+          showResponse(result.error || "Task submission failed", "error");
         }
       } catch (err) {
         showResponse(err.message, "error");

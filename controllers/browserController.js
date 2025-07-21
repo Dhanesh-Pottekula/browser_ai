@@ -1,6 +1,6 @@
 import express from 'express';
 import AiAgent from '../agents/aiAgentClass.js';
-import { launchBrowserWithConfig, pingAgent } from './browserService.js';
+import { launchBrowserWithConfig, pingAgent, planAndExecute } from './browserService.js';
 
 const router = express.Router();
 const aiAgent = new AiAgent();
@@ -18,6 +18,15 @@ router.post("/launch", async (req, res) => {
 router.post("/ping", async (req, res) => {
   try {
     const response = await pingAgent();
+    res.send({ status: "success", response });
+  } catch (err) {
+    res.status(500).send({ error: err.message });
+  }
+});
+
+router.post("/plan_and_execute", async (req, res) => {
+  try {
+    const response = await planAndExecute(req.body);
     res.send({ status: "success", response });
   } catch (err) {
     res.status(500).send({ error: err.message });

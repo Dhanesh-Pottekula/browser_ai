@@ -54,8 +54,8 @@ class BrowserManager {
    * @param {Object} context - Browser context
    * @returns {Promise<Object>} - Page object
    */
-  async getPage(context) {
-    let page = context.pages().at(0);
+  async getPage() {
+    let page = this.context.pages().at(0);
     if (!page) {
       page = await context.newPage();
     }
