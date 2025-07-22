@@ -32,26 +32,24 @@ Guidelines:
 - Do not wrap the JSON in triple backticks or any formatting.
 - Do not add any explanation or commentary.
 - Ensure the JSON is syntactically valid and complete.
-- Be thorough: include navigation, input, clicks, waits, error recovery, etc.
+- Be thorough: include navigation, input, clicks, waits etc.
 - Use clear and high-level descriptions suitable for another agent to execute.
 
 Return only the plain JSON object.`;
 
 
-export const executePlanPrompt = (currentStep, domElements) => `
+export const executePlanPrompt = (currentStep, domElements,history) => `
 You are a task execution assistant for browser automation tasks like job applications or content extraction.
 
-Your job is to simulate executing the current step from a plan using the given DOM snapshot. Respond using the strict JSON format below:
+Your job is to simulate executing the current step from a plan using the given DOM snapshot. Respond using the **strict JSON format** below **ONLY** — do not include any extra text, explanations, or markdown:
 
 {
   "response_status": "success | failure",
   "type": "automation | extraction",
-  "stepId": "ID of the current step",
   "stepTitle": "Title of the current step",
   "stepStatus": "completed | retry",
   "allStepsCompleted": true | false,
   "stopAgent": true | false,
-  "nextStepId": "ID of the next field or sub-step within the same current step (if stepStatus is retry)",
   "playwrightActions": [
     {
       "type": "click | fill | navigate | wait | extract | press",
@@ -65,68 +63,54 @@ Your job is to simulate executing the current step from a plan using the given D
 Guidelines:
 - Focus ONLY on the current step and the DOM snapshot.
 - Your goal is to map the step's action to a **sequence of Playwright-compatible interactions** using the DOM.
-- You MUST identify and return **usable selectors** (CSS/XPath) and **values** to drive the automation.
-- Always include a navigation step if the goal involves a new URL:  
-  e.g., { "type": "navigate", "selector": null, "value": "https://example.com" }
-- For actions like clicking, filling forms, or extracting data, return selectors that can be directly used in Playwright.
-- If the required elements are missing or ambiguous:
+- Always return selectors that can be directly used in Playwright.
+- If the required element is missing or ambiguous:
   - Set "response_status": "failure"
   - Set "stopAgent": true
-- Always break down the interaction into discrete steps:
-  - Each with "type", "selector", and "value"
-- Use:
-  - "type": "automation" for UI interactions
-  - "type": "extraction" for data scraping
-- Use concise selectors like 'input[placeholder="Email"]', 'button:has-text("Submit")'
-- Return ONLY the JSON response — no explanations, no comments
-
----
+- Return **exactly one valid JSON object**, no markdown, no extra explanations.
+- Do not wrap your response in \`\`\`json or any other code block.
+- Output only the final JSON.
 
 Current Step:
-\`\`\`json
 ${JSON.stringify(currentStep, null, 2)}
-\`\`\`
 
 DOM Snapshot:
-\`\`\`html
 ${domElements}
-\`\`\`
+
+History:
+${history}
 `;
-
-
 
 export const demoPlan = {
   response_status: 'success',
-  goal: "Navigate to Google, search for 'React articles', and click the first search result.",
+  goal: "Navigate to the documentation section by clicking on the 'Docs' link in the header of the currently opened page.",
   steps: [
     {
       id: '1',
-      action: "Navigate the browser to the URL 'http://google.com'.",
-      expectedOutcome: 'The Google search homepage is successfully loaded and visible.',
-      errorHandling: 'If navigation fails, retry after a short delay. If persistent, report network issue or incorrect URL.'
+      action: "Locate the 'Docs' link or button within the header section of the current page. Prioritize elements with text 'Docs' or 'Documentation' and a 'link' or 'button' role.",
+      expectedOutcome: "The 'Docs' element should be found and identifiable.",
+      errorHandling: `If not found, try alternative selectors like 'a[href*="docs"]' or 'button[aria-label*="docs"]'. If still not found, report failure.`
     },
     {
       id: '2',
-      action: "Locate the search input field on the Google homepage (e.g., by its 'name' attribute 'q' or 'aria-label' 'Search') and type the query 'React articles' into it.",
-      expectedOutcome: "The text 'React articles' is visible within the search input field.",
-      errorHandling: 'If the search input field is not found, wait for a few seconds and retry locating it. If still not found, try alternative selectors or report the element missing.'
+      action: "Click on the identified 'Docs' link or button.",
+      expectedOutcome: 'The browser should navigate to the documentation section of the website.',
+      errorHandling: "If the click fails (e.g., element not interactable), wait for a short period and retry. If navigation doesn't occur, check for modals or overlays preventing the click. Report failure if still unsuccessful."
     },
     {
       id: '3',
-      action: "Submit the search query by either pressing the 'Enter' key while the search input is focused, or by clicking the 'Google Search' button (e.g., by its 'name' attribute 'btnK').",
-      expectedOutcome: "The browser navigates to the search results page for 'React articles'.",
-      errorHandling: 'If the search results page does not load, wait for a few seconds and check for network activity. If persistent, retry submitting the query. If the button is not found, try pressing Enter.'
-    },
-    {
-      id: '4',
-      action: "Locate the first search result link on the search results page (typically an 'a' tag within an 'h3' tag or similar structure, usually the first one with a distinct class like 'LC20lb' or 'r') and click it.",
-      expectedOutcome: 'The browser navigates to the webpage corresponding to the first search result.',
-      errorHandling: 'If the first search result link is not found, wait for the page to fully load and retry locating it. If still not found, try selecting the first visible link that appears to be a main search result. If no links are found, report failure to find search results.'
+      action: "Verify that the URL has changed to reflect the documentation section (e.g., contains '/docs' or similar path) and the content on the page is related to documentation.",
+      expectedOutcome: 'The page content should be the documentation section.',
+      errorHandling: "If the URL or content doesn't change as expected, it indicates the click was unsuccessful or led to an incorrect page. Report failure."
     }
   ],
-  dependencies: [
-    'step_2 depends on step_1',
-    'step_3 depends on step_2',
-    'step_4 depends on step_3'
-  ]
+  dependencies: [ 'step_2 depends on step_1', 'step_3 depends on step_2' ]
 }
+
+
+export const  demoResponse={
+  response_status: "success",
+  playwrightActions: [
+    { type: 'click', selector: 'header >> text=Docs' }
+  ],
+};

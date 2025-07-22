@@ -50,6 +50,36 @@ class BrowserManager {
   }
 
   /**
+   * Launch new browser instance without user data
+   * @param {Object} config - Browser configuration
+   * @param {string} config.browserPath - Path to browser executable
+   * @param {boolean} config.headless - Whether to run in headless mode
+   * @param {string} config.channel - Browser channel (chrome, firefox, etc.)
+   * @returns {Promise<Object>} - Browser context
+   */
+  async launchBrowser(config = {}) {
+    const {
+      headless = false,
+      channel = 'chrome',
+      ...otherOptions
+    } = config;
+
+    const launchOptions = {
+      headless,
+      channel,
+      ...otherOptions
+    };
+    try {
+      this.browser = await chromium.launch(launchOptions);
+      this.context = await this.browser.newContext();
+
+      return this.context;
+    } catch (error) {
+      throw new Error(`Failed to launch browser: ${error.message}`);
+    }
+  }
+
+  /**
    * Get or create a new page
    * @param {Object} context - Browser context
    * @returns {Promise<Object>} - Page object
@@ -70,6 +100,17 @@ class BrowserManager {
   async closeContext() {
     if (this.context) {
       await this.context.close();
+      this.context = null;
+    }
+  }
+
+  /**
+   * Close browser instance
+   */
+  async closeBrowser() {
+    if (this.browser) {
+      await this.browser.close();
+      this.browser = null;
       this.context = null;
     }
   }

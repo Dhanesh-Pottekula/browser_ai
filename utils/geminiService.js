@@ -15,23 +15,23 @@ class GeminiService {
   }
 
   async generateContent(message) {
-      const contents = [
-        {
-          role: "user",
-          parts: [{ text: message }],
-        },
-      ];
+    const contents = [
+      {
+        role: "user",
+        parts: [{ text: message }],
+      },
+    ];
+    console.log("calling gemini");
+    const response = await this.model.generateContent({
+      contents,
+      generationConfig: {
+        temperature: 0.7,
+      },
+    });
 
-      const response = await this.model.generateContent({
-        contents,
-        generationConfig: {
-          temperature: 0.7
-        },
-      });
-
-      const rawText = await response.response.text();
-      const text=JSON.parse(rawText);
-      return text
+    const rawText = await response.response.text();
+    const text = JSON.parse(rawText);
+    return text;
   }
 
   async ping() {

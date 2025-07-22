@@ -42,16 +42,29 @@ class PageActions {
   }
 
   /**
-   * Type text into an input field
+   * Type text into an input field with human-like behavior
    * @param {Object} page - Playwright page object
    * @param {string} selector - Element selector
    * @param {string} text - Text to type
    * @param {Object} options - Type options
+   * @param {number} delayBetweenChars - Delay between characters in milliseconds (default: 50-150ms random)
    */
-  static async type(page, selector, text, options = {}) {
+  static async type(page, selector, text, options = {}, delayBetweenChars = null) {
     try {
       await DelayUtils.waitForElement(page, selector);
-      await page.fill(selector, text, options);
+      
+      // Clear the field first
+      await page.fill(selector, '');
+      
+      // Type character by character with human-like delays
+      for (let i = 0; i < text.length; i++) {
+        const char = text[i];
+        
+        // Random delay between characters (50-150ms) to simulate human typing
+        const delay = delayBetweenChars || Math.random() * 100 + 50;
+        await page.type(selector, char, { delay: 0 });
+        await DelayUtils.delay(delay);
+      }
     } catch (error) {
       throw new Error(
         `Failed to type in element ${selector}: ${error.message}`
