@@ -113,44 +113,80 @@ class PageActions {
 
   static async getCleanedHTML(page) {
     try {
-      const html = await page.content();
-      const $ = cheerio.load(html);
-
-      // Remove unwanted tags completely
-      $("script, style, noscript, link, meta").remove();
-
-      // Remove hidden or invisible elements
-      $(
-        '[style*="display:none"], [style*="visibility:hidden"], [style*="opacity:0"]'
-      ).remove();
-
-      // Whitelist of attributes to retain
-      const allowedAttrs = [
-        "id",
-        "class",
-        "name",
-        "type",
-        "aria-label",
-        "role",
-      ];
-
-      // Strip all attributes except allowed ones
-      $("*").each((_, el) => {
-        const attribs = el.attribs;
-        for (const attr in attribs) {
-          if (!allowedAttrs.includes(attr)) {
-            $(el).removeAttr(attr);
+      const minimalHTML = await page.evaluate(() => {
+        const allowedAttrs = new Set(["id", "aria-label", "role", "name", "placeholder", "title", "alt", "type"]);
+        const voidTags = new Set([
+          "area", "base", "br", "col", "embed", "hr", "img", "input",
+          "link", "meta", "param", "source", "track", "wbr",
+        ]);
+        
+        // Get viewport dimensions
+        const viewportWidth = window.innerWidth;
+        const viewportHeight = window.innerHeight;
+  
+        function cleanElement(el) {
+          const tag = el.tagName.toLowerCase();
+          if (["script", "style", "noscript", "link", "meta"].includes(tag)) return null;
+  
+          const rect = el.getBoundingClientRect();
+          const style = window.getComputedStyle(el);
+          
+          // Check if element is visible
+          const isVisible =
+            style.display !== "none" &&
+            style.visibility !== "hidden" &&
+            style.opacity !== "0" &&
+            rect.width > 0 &&
+            rect.height > 0;
+  
+          if (!isVisible) return null;
+          
+          // Check if element is in viewport
+          const isInViewport = 
+            rect.bottom > 0 &&
+            rect.right > 0 &&
+            rect.top < viewportHeight &&
+            rect.left < viewportWidth;
+            
+          if (!isInViewport) return null;
+  
+          let attrString = "";
+          for (const attr of el.attributes) {
+            if (allowedAttrs.has(attr.name)) {
+              attrString += ` ${attr.name}="${attr.value}"`;
+            }
           }
+  
+          const childrenHTML = Array.from(el.childNodes).map((child) => {
+            if (child.nodeType === Node.TEXT_NODE) {
+              return child.textContent.trim();
+            } else if (child.nodeType === Node.ELEMENT_NODE) {
+              return cleanElement(child);
+            }
+            return "";
+          }).join("");
+  
+          if (voidTags.has(tag)) {
+            return `<${tag}${attrString} />`;
+          }
+  
+          return `<${tag}${attrString}>${childrenHTML}</${tag}>`;
         }
+  
+        const cleanedBody = Array.from(document.body.children)
+          .map(cleanElement)
+          .filter(Boolean)
+          .join("\n");
+  
+        return `${cleanedBody}`;
       });
-
-      // Return cleaned body HTML
-      return $("body").html();
+  
+      return minimalHTML;
     } catch (error) {
-      throw new Error(`Failed to clean DOM: ${error.message}`);
+      throw new Error(`Failed to get cleaned HTML: ${error.message}`);
     }
   }
-
+  
   /**
    * Get page title
    * @param {Object} page - Playwright page object
@@ -180,6 +216,22 @@ class PageActions {
     } catch (error) {
       throw new Error(
         `Failed to scroll to element ${selector}: ${error.message}`
+      );
+    }
+  }
+
+  /**
+   * Scroll down by a specified amount
+   * @param {Object} page - Playwright page object
+   * @param {number} amount - Amount to scroll down in pixels
+   */
+  static async scrollDown(page, amount = 500) {
+    try {
+      const currentScrollY = await page.evaluate(() => window.scrollY);
+      await page.evaluate((scrollY) => window.scrollTo(0, scrollY), currentScrollY + amount);
+    } catch (error) {
+      throw new Error(
+        `Failed to scroll down by ${amount}px: ${error.message}`
       );
     }
   }

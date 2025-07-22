@@ -9,7 +9,7 @@
  * @returns {Promise<Response>} - The fetch response
  */
 export async function post(url, data) {
-  console.log("posting to", url, data);
+  console.log("posting to agent",url);
   const response = await fetch(url, {
     method: 'POST',
     headers: {

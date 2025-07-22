@@ -55,9 +55,11 @@ class BrowserManager {
    * @returns {Promise<Object>} - Page object
    */
   async getPage() {
-    let page = this.context.pages().at(0);
+    const pages = this.context.pages();
+    let page = pages.length > 0 ? pages[0] : null;
+
     if (!page) {
-      page = await context.newPage();
+      page = await this.context.newPage();
     }
     return page;
   }

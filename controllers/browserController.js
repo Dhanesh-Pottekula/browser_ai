@@ -26,7 +26,7 @@ router.post("/ping", async (req, res) => {
 
 router.post("/plan_and_execute", async (req, res) => {
   try {
-    const response = await planAndExecute(req.body);
+    const response = await planAndExecute(req.body?.prompt);
     res.send({ status: "success", response });
   } catch (err) {
     res.status(500).send({ error: err.message });

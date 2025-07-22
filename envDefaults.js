@@ -9,7 +9,8 @@ const envDefaults = {
   browserPath: process.env.BROWSER_PATH || null,
   headless: process.env.HEADLESS === 'true' || false,
   channel: process.env.CHANNEL || 'chrome',
-  model: process.env.MODAL_NAME
+  model: process.env.MODAL_NAME,
+  llmApiKey: process.env.LLM_API_KEY || null,
 };
 console.log(envDefaults);
 
